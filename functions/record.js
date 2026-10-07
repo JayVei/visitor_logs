@@ -32,7 +32,7 @@ exports.handler = async (event) => {
     const client = new MongoClient(MONGODB_URI);
     await client.connect();
 
-    await client.db('blog').collection('visitor_logs').insertOne({
+    await client.db('test').collection('visitor_logs').insertOne({
       ip: ip,
       page: page,
       visitedAt: new Date(),
