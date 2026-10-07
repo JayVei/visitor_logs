@@ -2,7 +2,6 @@ const { MongoClient } = require('mongodb');
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// 统一的 CORS 响应头
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type',
@@ -11,16 +10,10 @@ const CORS_HEADERS = {
 };
 
 exports.handler = async (event) => {
-  // 1. 处理浏览器的 CORS 预检请求（OPTIONS）
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
-      headers: CORS_HEADERS,
-      body: ''
-    };
+    return { statusCode: 204, headers: CORS_HEADERS, body: '' };
   }
 
-  // 2. 只允许 POST
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -30,19 +23,16 @@ exports.handler = async (event) => {
   }
 
   try {
-    // 3. 通过指定的 API 获取访客 IP
-    const ipRes = await fetch('https://v.api.aa1.cn/api/myip/index.php?aa1=json');
-    const ipData = await ipRes.json();
-    const ip = ipData.myip;
+    // 从 Netlify 请求头里直接获取访客真实 IP
+    const forwarded = event.headers['x-forwarded-for'] || event.headers['X-Forwarded-For'];
+    const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
 
-    // 4. 解析前端传来的页面路径
     let page = '/';
     try {
       const body = JSON.parse(event.body || '{}');
       page = body.page || '/';
     } catch (e) { /* 忽略 */ }
 
-    // 5. 写入 MongoDB
     const client = new MongoClient(MONGODB_URI);
     await client.connect();
 
